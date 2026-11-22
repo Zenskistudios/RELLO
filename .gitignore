@@ -2,6 +2,11 @@ node_modules/
 dist/
 data/
 uploads/
+.expo/
+.kotlin/
+*.tsbuildinfo
+src-tauri/target/
 .env
 .env.*
+.env*.local
 !.env.example

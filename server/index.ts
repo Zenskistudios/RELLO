@@ -12,6 +12,29 @@ mkdirSync("uploads", { recursive: true });
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(path.resolve("uploads"), { maxAge: "1d" }));
 
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "tauri://localhost",
+  "http://tauri.localhost",
+  "https://tauri.localhost",
+  ...(process.env.CORS_ORIGINS ?? "").split(",").map((origin) => origin.trim()).filter(Boolean)
+]);
+
+app.use((req, res, next) => {
+  const origin = req.header("origin");
+  const allowed = origin ? allowedOrigins.has(origin) : false;
+  if (allowed && origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Max-Age", "600");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(allowed ? 204 : 403);
+  return next();
+});
+
 type User = { id: number; username: string; display_name: string; email: string };
 type AuthRequest = Request & { user?: User };
 type PostRow = {
@@ -166,9 +189,9 @@ app.post("/api/auth/register", (req, res) => {
 });
 
 app.post("/api/auth/login", (req, res) => {
-  const email = String(req.body.email ?? "").trim().toLowerCase();
+  const identifier = String(req.body.identifier ?? req.body.email ?? "").trim().replace(/^@/, "").toLowerCase();
   const password = String(req.body.password ?? "");
-  const user = db.prepare("SELECT id, username, display_name, email, password_hash FROM users WHERE email = ? COLLATE NOCASE").get(email) as (User & { password_hash: string }) | undefined;
+  const user = db.prepare("SELECT id, username, display_name, email, password_hash FROM users WHERE email = ? COLLATE NOCASE OR username = ? COLLATE NOCASE").get(identifier, identifier) as (User & { password_hash: string }) | undefined;
   const [salt, storedHash] = user?.password_hash.split(":") ?? ["", ""];
   const actualHash = user ? scryptSync(password, salt, 64) : randomBytes(64);
   const expectedHash = Buffer.from(storedHash || "0".repeat(128), "hex");

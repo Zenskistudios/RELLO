@@ -3,10 +3,18 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "apps/mobile"
+  ],
   "scripts": {
     "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch server/index.ts",
     "dev:web": "vite",
+    "dev:mobile": "npm run start --workspace @rello/mobile",
+    "dev:desktop": "concurrently -k \"npm:dev:api\" \"npm:tauri:dev\"",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "build": "tsc -b && vite build",
     "start": "tsx server/index.ts",
     "typecheck": "tsc -b --pretty false"
@@ -29,6 +37,7 @@
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.7",
+    "@tauri-apps/cli": "^2.12.6",
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^9.2.0",
     "tsx": "^4.20.3",
