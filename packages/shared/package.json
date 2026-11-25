@@ -1,0 +1,10 @@
+{
+  "name": "@rello/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api": "./src/api.ts",
+    "./types": "./src/types.ts"
+  }
+}

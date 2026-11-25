@@ -4,7 +4,7 @@ Rello is a social-first Nigerian network for neighbourhood updates, conversation
 
 ## Run locally
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 20.19 or newer and npm.
 
 ```powershell
 npm install
@@ -45,3 +45,13 @@ npm start
 ```
 
 Open `http://localhost:3001` in Chrome or Edge and use **Install Rello** from the browser menu. The install button also appears inside the app when the browser exposes an install prompt. Rello caches the app shell and static assets; `/api/` and `/uploads/` requests remain network-first, and offline navigation displays an offline screen when no cached page is available.
+
+## Cross-platform clients
+
+The web/PWA remains available. The project is organized as npm workspaces: `packages/shared` contains the API client and data types used by the web and native clients; `apps/mobile` is the Expo/React Native Android and iOS app; and `src-tauri` packages the existing web UI as a Windows/macOS desktop app.
+
+Run the mobile app with `npm run dev:mobile`. Android emulator requests use `http://10.0.2.2:3001`; the iOS simulator uses `http://localhost:3001`. For a physical phone, copy `apps/mobile/.env.example` to `apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to the computer's LAN IP and ensure the development firewall allows port 3001. A hosted API URL is required for production installs that must work away from the development computer. Android map tiles need a Google Maps API key; set `GOOGLE_MAPS_ANDROID_API_KEY` in the local environment and restrict it to Rello's application identifier and signing certificate. iOS uses the platform's default map provider.
+
+Internal Android test builds can be created with `npx eas-cli@latest build --project-dir apps/mobile --profile preview --platform android`. Before a release build, set `EXPO_PUBLIC_API_URL` to the hosted API in the EAS environment; set the restricted `GOOGLE_MAPS_ANDROID_API_KEY` there as well if Android map tiles are required. Production iOS builds require Apple signing and an EAS account; they can be built from EAS without a local Mac, but final App Store submission still needs the required Apple account and app metadata.
+
+On Windows, install the Rust Windows MSVC toolchain and WebView2, then use `npm run dev:desktop` or `npm run tauri:build`. Build macOS application bundles on a Mac (or a macOS CI runner); Apple's signing and distribution requirements cannot be completed from Windows. Configure `VITE_API_URL` to the hosted API endpoint before building a release. Desktop and mobile clients currently call the same REST API; SQLite/local filesystem remains development-only until a hosted database, media storage and production authentication provider are selected. Add the deployed web origin to `CORS_ORIGINS` on the API. Tauri's supported local origins are allowed for development; physical native mobile requests do not use browser CORS.

@@ -6,7 +6,7 @@ import {
   Settings2, ShieldCheck, Sparkles, X, type LucideIcon
 } from "lucide-react";
 import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
-import { api, clearToken, getToken, json, setToken, type Comment, type Notification, type Post, type User } from "./api";
+import { api, assetUrl, clearToken, getToken, json, setToken, type Comment, type Notification, type Post, type User } from "./api";
 
 type Screen = "feed" | "discover" | "map" | "notifications" | "bookmarks" | "profile" | "search";
 type FeedTab = "for-you" | "following" | "nearby" | "trending";
@@ -28,7 +28,7 @@ function initials(name: string) {
 function Avatar({ name, src, size = "md", online = false }: { name: string; src?: string; size?: "sm" | "md" | "lg"; online?: boolean }) {
   return (
     <span className={`avatar avatar-${size}`}>
-      {src ? <img src={src} alt="" /> : <span>{initials(name)}</span>}
+      {src ? <img src={assetUrl(src)} alt="" /> : <span>{initials(name)}</span>}
       {online && <i />}
     </span>
   );
@@ -44,8 +44,9 @@ function timeAgo(date: string) {
 }
 
 function AuthScreen({ onAuth }: { onAuth: (user: User, token: string) => void }) {
-  const [mode, setMode] = useState<"login" | "register">("register");
+  const [mode, setMode] = useState<"welcome" | "login" | "register">("welcome");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -67,37 +68,60 @@ function AuthScreen({ onAuth }: { onAuth: (user: User, token: string) => void })
     }
   }
 
+  function changeMode(nextMode: "welcome" | "login" | "register") {
+    setError("");
+    setShowPassword(false);
+    setMode(nextMode);
+  }
+
   return (
-    <main className="auth-page">
-      <section className="auth-brand">
-        <div className="brand-lockup brand-lockup-light"><span className="brand-mark"><Activity size={21} strokeWidth={2.8} /></span><span>Rel<span>lo</span></span></div>
+    <main className={`auth-page ${mode === "welcome" ? "auth-welcome" : "auth-entering"}`}>
+      <section className="auth-brand" aria-label="About Rello">
+        <div className="brand-lockup brand-lockup-light" aria-label="Rello"><span className="brand-mark"><Activity size={21} strokeWidth={2.8} /></span><span>Rel<span>lo</span></span></div>
         <div className="auth-story">
           <div className="eyebrow"><span className="live-dot" /> A little closer to home</div>
           <h1>Your city,<br />in the <em>conversation.</em></h1>
           <p>Neighbourhood voices. Real-time updates. Small actions that make a city move.</p>
+          <div className="auth-illustration" aria-hidden="true">
+            <span className="auth-orbit auth-orbit-one" /><span className="auth-orbit auth-orbit-two" />
+            <span className="auth-map-line auth-map-line-one" /><span className="auth-map-line auth-map-line-two" />
+            <span className="auth-pin auth-pin-one"><MapPin size={19} fill="currentColor" /></span>
+            <span className="auth-pin auth-pin-two"><MapPin size={16} fill="currentColor" /></span>
+            <span className="auth-note"><span className="auth-note-dot" /> Around the corner <small>People & places, together</small></span>
+          </div>
         </div>
-        <div className="auth-community">
-          <div className="avatar-stack"><Avatar name="Amara Okafor" size="sm" /><Avatar name="Tunde Bello" size="sm" /><Avatar name="Zainab Musa" size="sm" /></div>
-          <span>Built by people who care where they live.</span>
-        </div>
-        <span className="auth-geo">6° 27′ 11.6″ N &nbsp; 3° 23′ 45.7″ E</span>
+        <div className="auth-community"><span>Made for the places we call home</span><span className="auth-community-spark">✳</span><span>Nigeria</span></div>
       </section>
       <section className="auth-form-wrap">
-        <div className="mobile-auth-brand brand-lockup"><span className="brand-mark"><Activity size={21} strokeWidth={2.8} /></span><span>Rel<span>lo</span></span></div>
-        <form className="auth-card" onSubmit={submit}>
-          <span className="eyebrow muted">{mode === "register" ? "YOUR NEIGHBOURHOOD IS HERE" : "GOOD TO SEE YOU AGAIN"}</span>
-          <h2>{mode === "register" ? "Make yourself at home." : "Welcome back."}</h2>
-          <p className="auth-subtitle">{mode === "register" ? "Join the people shaping the places we share." : "The conversation has been going on without you."}</p>
-          {mode === "register" && <label>Your name<input name="displayName" autoComplete="name" placeholder="How should we call you?" required maxLength={60} /></label>}
-          {mode === "register" && <label>Choose a username<div className="input-prefix"><span>@</span><input name="username" autoComplete="username" placeholder="yourname" required minLength={3} maxLength={30} pattern="[A-Za-z0-9_]+" /></div></label>}
-          <label>Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" required /></label>
-          <label>Password<input name="password" type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder={mode === "register" ? "At least 8 characters" : "Your password"} minLength={8} required /></label>
-          {error && <div className="form-error" role="alert">{error}</div>}
-          <button className="button button-primary auth-submit" disabled={loading}>{loading ? "One moment…" : mode === "register" ? "Create your account" : "Sign in"}<ArrowUpRight size={17} /></button>
-          <div className="auth-switch">{mode === "register" ? "Already part of the neighbourhood?" : "New around here?"}<button type="button" onClick={() => { setError(""); setMode(mode === "register" ? "login" : "register"); }}>{mode === "register" ? "Sign in" : "Create an account"}</button></div>
-          <p className="auth-terms">By continuing, you agree to keep this a kind, constructive space for everyone.</p>
-        </form>
-        <span className="auth-footer">Made for the places we call home <span>✳</span> Nigeria</span>
+        <div className="mobile-auth-brand brand-lockup" aria-label="Rello"><span className="brand-mark"><Activity size={21} strokeWidth={2.8} /></span><span>Rel<span>lo</span></span></div>
+        {mode === "welcome" ? (
+          <div className="auth-welcome-card">
+            <span className="eyebrow muted">YOUR NEIGHBOURHOOD IS HERE</span>
+            <h2>Good things happen <span>closer.</span></h2>
+            <p className="auth-subtitle">Find your people, share what’s happening, and stay in the conversation around the places you call home.</p>
+            <button className="button button-primary auth-submit" onClick={() => changeMode("register")}>Create your account<ArrowUpRight size={17} /></button>
+            <button className="button auth-login-button" onClick={() => changeMode("login")}>Log in</button>
+            <p className="auth-terms">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+            {error && <div className="auth-inline-note" role="status">{error}</div>}
+          </div>
+        ) : (
+          <form className="auth-card" onSubmit={submit}>
+            <button className="auth-back" type="button" onClick={() => changeMode("welcome")}><ArrowLeft size={15} /> Back</button>
+            <span className="eyebrow muted">{mode === "register" ? "YOUR NEIGHBOURHOOD IS HERE" : "GOOD TO SEE YOU AGAIN"}</span>
+            <h2>{mode === "register" ? "Make yourself at home." : "Welcome back."}</h2>
+            <p className="auth-subtitle">{mode === "register" ? "Join the people shaping the places we share." : "The conversation has been going on without you."}</p>
+            {mode === "register" && <label>Your name<input name="displayName" autoComplete="name" placeholder="How should we call you?" required minLength={2} maxLength={60} /></label>}
+            {mode === "register" && <label>Choose a username<div className="input-prefix"><span>@</span><input name="username" autoComplete="username" placeholder="yourname" required minLength={3} maxLength={30} pattern="[A-Za-z0-9_]+" title="Use 3–30 letters, numbers, or underscores." /></div></label>}
+            <label>{mode === "login" ? "Email address or username" : "Email address"}<input name={mode === "login" ? "identifier" : "email"} type={mode === "login" ? "text" : "email"} autoComplete={mode === "login" ? "username" : "email"} placeholder={mode === "login" ? "you@example.com or username" : "you@example.com"} required /></label>
+            <label>Password<div className="auth-password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder={mode === "register" ? "At least 8 characters" : "Your password"} minLength={8} maxLength={128} required /><button type="button" className="auth-password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></label>
+            {mode === "login" && <button type="button" className="auth-forgot" onClick={() => setError("Password reset isn't available yet. Please contact support if you need help accessing your account.")}>Forgot password?</button>}
+            {error && <div className="form-error" role="alert">{error}</div>}
+            <button className="button button-primary auth-submit" disabled={loading}>{loading ? "One moment…" : mode === "register" ? "Create your account" : "Log in"}<ArrowUpRight size={17} /></button>
+            <div className="auth-switch">{mode === "register" ? "Already part of the neighbourhood?" : "New around here?"}<button type="button" onClick={() => changeMode(mode === "register" ? "login" : "register")}>{mode === "register" ? "Log in" : "Create an account"}</button></div>
+            {mode === "register" && <p className="auth-terms">By continuing, you agree to keep this a kind, constructive space for everyone.</p>}
+          </form>
+        )}
+        <span className="auth-footer">A little closer to home <span>✳</span> Nigeria</span>
       </section>
     </main>
   );
@@ -189,8 +213,8 @@ function PostCard({
           {post.body && <p className="post-text">{post.body.split(/(#[-\w]+|@[\w]+)/g).map((part, index) => part.startsWith("#") || part.startsWith("@") ? <span className="post-link" key={`${part}-${index}`}>{part}</span> : part)}</p>}
           {post.location && <button className="location-tag" onClick={() => onOpenProfile(post.username)}><MapPin size={13} />{post.location}</button>}
           {post.media_url && (post.media_type === "video" ? (
-            <video className="post-media" src={post.media_url} controls preload="metadata" playsInline />
-          ) : <img className="post-media" src={post.media_url} alt="Shared by the community" loading="lazy" />)}
+            <video className="post-media" src={assetUrl(post.media_url)} controls preload="metadata" playsInline />
+          ) : <img className="post-media" src={assetUrl(post.media_url)} alt="Shared by the community" loading="lazy" />)}
           <div className="engagement-row">
             <button className={`engagement-action ${post.liked ? "is-liked" : ""}`} onClick={() => void toggle("like")} disabled={busy} aria-label={`${post.liked ? "Unlike" : "Like"} post`}><Heart size={18} fill={post.liked ? "currentColor" : "none"} /><span>{post.like_count || ""}</span></button>
             <button className={`engagement-action ${comments ? "is-active" : ""}`} onClick={() => void loadComments()} aria-label="View replies"><MessageCircle size={18} /><span>{post.comment_count || ""}</span></button>
@@ -301,7 +325,7 @@ function Discover({ posts, loading, refresh, notify, onOpenProfile }: { posts: P
       <div className="page-title-row"><div><span className="eyebrow muted">A DIFFERENT VIEW OF THE CITY</span><h1>Watch</h1></div><span className="community-chip"><Film size={14} /> Short stories, close to home</span></div>
       {loading ? <div className="discover-empty"><span className="spin-loader" /></div> : videos.length ? <div className="video-feed" aria-label="Vertical video feed">
         {videos.map((post) => <article className="video-card" key={post.id}>
-          <video ref={(element) => { if (element) videoRefs.current.set(post.id, element); else videoRefs.current.delete(post.id); }} src={post.media_url} muted={muted} loop playsInline preload="metadata" onClick={(event) => { const video = event.currentTarget; if (video.paused) void video.play(); else video.pause(); }} />
+          <video ref={(element) => { if (element) videoRefs.current.set(post.id, element); else videoRefs.current.delete(post.id); }} src={assetUrl(post.media_url)} muted={muted} loop playsInline preload="metadata" onClick={(event) => { const video = event.currentTarget; if (video.paused) void video.play(); else video.pause(); }} />
           <div className="video-gradient" />
           <div className="video-topline"><span><span className="live-dot" /> FROM THE COMMUNITY</span><button onClick={() => setMuted(!muted)} aria-label={muted ? "Unmute video" : "Mute video"}>{muted ? <VolumeMuted /> : <VolumeOn />}</button></div>
           <div className="video-copy">

@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Rello",
+    "slug": "rello",
+    "scheme": "rello",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f5f6f2"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Rello uses your photos when you choose to share them.",
+          "cameraPermission": "Rello uses your camera when you choose to capture a post."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Rello uses your location only when you choose to add it to a post."
+        }
+      ],
+      "expo-video"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.rello.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rello.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#302f51",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
